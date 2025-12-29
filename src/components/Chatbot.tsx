@@ -1,7 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { chatApi, ChatMessage } from '@/services/api';
+import { toast } from 'sonner';
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,20 +37,130 @@ const Chatbot = () => {
     }
   }, [isOpen]);
 
+  const streamChat = async (userMessages: ChatMessage[]) => {
+    const resp = await fetch(CHAT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ messages: userMessages }),
+    });
+
+    if (!resp.ok) {
+      const errorData = await resp.json().catch(() => ({}));
+      if (resp.status === 429) {
+        throw new Error("Rate limit exceeded. Please wait a moment and try again.");
+      }
+      if (resp.status === 402) {
+        throw new Error("AI usage limit reached. Please try again later.");
+      }
+      throw new Error(errorData.error || "Failed to get AI response");
+    }
+
+    if (!resp.body) {
+      throw new Error("No response body");
+    }
+
+    return resp.body;
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
     const userMessage: ChatMessage = { role: 'user', content: input };
-    setMessages((prev) => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInput('');
     setIsLoading(true);
 
+    let assistantContent = '';
+
     try {
-      const response = await chatApi.sendMessage([...messages, userMessage]);
-      setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
+      const body = await streamChat(updatedMessages);
+      const reader = body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = '';
+      let streamDone = false;
+
+      // Add initial assistant message
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        // Process line-by-line as data arrives
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') {
+            streamDone = true;
+            break;
+          }
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantContent += content;
+              setMessages(prev => {
+                const newMessages = [...prev];
+                newMessages[newMessages.length - 1] = {
+                  role: 'assistant',
+                  content: assistantContent,
+                };
+                return newMessages;
+              });
+            }
+          } catch {
+            // Incomplete JSON, put it back and wait for more data
+            textBuffer = line + '\n' + textBuffer;
+            break;
+          }
+        }
+      }
+
+      // Final flush
+      if (textBuffer.trim()) {
+        for (let raw of textBuffer.split('\n')) {
+          if (!raw) continue;
+          if (raw.endsWith('\r')) raw = raw.slice(0, -1);
+          if (raw.startsWith(':') || raw.trim() === '') continue;
+          if (!raw.startsWith('data: ')) continue;
+          const jsonStr = raw.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantContent += content;
+              setMessages(prev => {
+                const newMessages = [...prev];
+                newMessages[newMessages.length - 1] = {
+                  role: 'assistant',
+                  content: assistantContent,
+                };
+                return newMessages;
+              });
+            }
+          } catch { /* ignore partial leftovers */ }
+        }
+      }
     } catch (error) {
-      setMessages((prev) => [
-        ...prev,
+      console.error('Chat error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get response';
+      toast.error(errorMessage);
+      setMessages(prev => [
+        ...prev.filter(m => m.content !== ''),
         { role: 'assistant', content: "Sorry, I couldn't process your request. Please try again." },
       ]);
     } finally {
@@ -63,6 +180,21 @@ const Chatbot = () => {
     "Explain React hooks",
     "Tips for exam preparation",
   ];
+
+  // Simple markdown-like rendering
+  const renderContent = (content: string) => {
+    return content
+      .split('\n')
+      .map((line, i) => {
+        // Bold text
+        line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        // Bullet points
+        if (line.startsWith('- ')) {
+          line = '• ' + line.slice(2);
+        }
+        return <div key={i} dangerouslySetInnerHTML={{ __html: line || '<br/>' }} />;
+      });
+  };
 
   return (
     <>
@@ -123,11 +255,11 @@ const Chatbot = () => {
                       : 'bg-secondary text-secondary-foreground rounded-tl-sm'
                   }`}
                 >
-                  <div className="whitespace-pre-wrap">{message.content}</div>
+                  <div className="whitespace-pre-wrap">{renderContent(message.content)}</div>
                 </div>
               </div>
             ))}
-            {isLoading && (
+            {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
               <div className="flex gap-3 chat-message">
                 <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center flex-shrink-0">
                   <Bot className="w-4 h-4 text-primary-foreground" />
