@@ -1,73 +1,174 @@
-# Welcome to your Lovable project
+# 🎓 AI Study Planner
 
-## Project info
+An intelligent, adaptive study planning system powered by Reinforcement Learning that creates personalized learning paths based on your progress, performance, and feedback.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## ✨ Features
 
-## How can I edit this code?
+- **RL-Powered Study Plans** - Q-Learning algorithm adapts recommendations based on your performance
+- **Difficulty-Aware Resources** - Curated YouTube videos and articles matched to your skill level
+- **Smart Scheduling** - Daily study schedules with specific activities and focus areas
+- **AI Chatbot** - Get instant help with study questions and explanations
+- **Feedback Loop** - Your feedback directly improves future recommendations
 
-There are several ways of editing your application.
+## 🧠 How It Works
 
-**Use Lovable**
+### Reinforcement Learning Engine
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+The system uses Q-Learning with the following parameters:
+- **Alpha (α)**: 0.1 - Learning rate
+- **Gamma (γ)**: 0.9 - Discount factor for future rewards
+- **Epsilon (ε)**: 0.1 - Exploration rate
 
-Changes made via Lovable will be committed automatically to this repo.
+### State-Action Model
 
-**Use your preferred IDE**
+| Complexity Level | Recommended Study Hours |
+|------------------|------------------------|
+| Beginner (1)     | 1-2 hours/day         |
+| Intermediate (2) | 2-3 hours/day         |
+| Advanced (3)     | 3-4 hours/day         |
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Reward System
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+| Action                    | Reward |
+|---------------------------|--------|
+| Topic completed           | +10    |
+| Quiz score > 80%          | +8     |
+| High confidence reported  | +5     |
+| Topic abandoned           | -5     |
+| Repeated failure          | -10    |
 
-Follow these steps:
+## 🛠️ Tech Stack
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Backend**: Supabase Edge Functions (Deno)
+- **AI**: Lovable AI API
+- **APIs**: YouTube Data API, Google Custom Search API
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 📁 Project Structure
 
-# Step 3: Install the necessary dependencies.
-npm i
+```
+├── src/
+│   ├── components/
+│   │   ├── Chatbot.tsx       # AI chat assistant
+│   │   ├── Navbar.tsx        # Navigation component
+│   │   └── StudyCard.tsx     # Study plan display card
+│   ├── pages/
+│   │   ├── Home.tsx          # Landing page
+│   │   ├── StudyPlan.tsx     # Plan generation page
+│   │   └── Feedback.tsx      # User feedback page
+│   └── services/
+│       └── api.ts            # API service layer
+├── supabase/
+│   └── functions/
+│       ├── chat/             # AI chatbot endpoint
+│       └── study-plan/       # RL study planner endpoint
+└── public/
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm or bun
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
+
+# Navigate to project directory
+cd ai-study-planner
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Environment Variables
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The following environment variables are automatically configured:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
 
-**Use GitHub Codespaces**
+## 📖 Usage
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. **Create a Study Plan**
+   - Enter your subject and topic
+   - Select your complexity level (Beginner/Intermediate/Advanced)
+   - Click "Generate Study Plan"
 
-## What technologies are used for this project?
+2. **Review Your Plan**
+   - View recommended study hours
+   - Access curated YouTube videos and articles
+   - Follow the daily study schedule
 
-This project is built with:
+3. **Provide Feedback**
+   - Rate your satisfaction (1-5)
+   - Share what went well
+   - Report any challenges
+   - Your feedback trains the RL model
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+4. **Chat with AI**
+   - Ask study-related questions
+   - Get explanations on topics
+   - Request custom study advice
 
-## How can I deploy this project?
+## 🔄 API Endpoints
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+### `POST /study-plan`
 
-## Can I connect a custom domain to my Lovable project?
+**Create Plan Request:**
+```json
+{
+  "action": "create_plan",
+  "subject": "Python",
+  "topic": "Data Structures",
+  "complexity": 2
+}
+```
 
-Yes, you can!
+**Submit Feedback Request:**
+```json
+{
+  "action": "submit_feedback",
+  "state": 2,
+  "action_taken": 3,
+  "reward": 8,
+  "next_state": 3
+}
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### `POST /chat`
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```json
+{
+  "messages": [
+    { "role": "user", "content": "Explain recursion" }
+  ]
+}
+```
+
+## 🎨 Design System
+
+The app uses a custom design system with:
+- Semantic color tokens (HSL-based)
+- Responsive layouts
+- Smooth animations
+- Dark/light mode support
+
+## 📄 License
+
+MIT License - feel free to use this project for learning and development.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+---
+
+Built with ❤️ using [Lovable](https://lovable.dev)
