@@ -89,11 +89,6 @@ npm install
 npm run dev
 ```
 
-### Environment Variables
-
-The following environment variables are automatically configured:
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_KEY`
 
 ## 📖 Usage
 
@@ -118,40 +113,7 @@ The following environment variables are automatically configured:
    - Get explanations on topics
    - Request custom study advice
 
-## 🔄 API Endpoints
 
-### `POST /study-plan`
-
-**Create Plan Request:**
-```json
-{
-  "action": "create_plan",
-  "subject": "Python",
-  "topic": "Data Structures",
-  "complexity": 2
-}
-```
-
-**Submit Feedback Request:**
-```json
-{
-  "action": "submit_feedback",
-  "state": 2,
-  "action_taken": 3,
-  "reward": 8,
-  "next_state": 3
-}
-```
-
-### `POST /chat`
-
-```json
-{
-  "messages": [
-    { "role": "user", "content": "Explain recursion" }
-  ]
-}
-```
 
 ## 🎨 Design System
 
@@ -171,4 +133,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
-Built with ❤️ using [Lovable](https://lovable.dev)
+Built with ❤️ 
