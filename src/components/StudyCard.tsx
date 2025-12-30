@@ -7,8 +7,8 @@ interface StudyCardProps {
   data: {
     studyHours?: number;
     daysNeeded?: number;
-    resources?: Array<{ title: string; url: string }>;
-    schedule?: Array<{ day: number; hours: number; focus: string }>;
+    resources?: Array<{ title: string; url: string; thumbnail?: string; snippet?: string }>;
+    schedule?: Array<{ day: number; hours: number; focus: string; activities?: string[] }>;
   };
 }
 
@@ -129,15 +129,26 @@ const StudyCard = ({ type, data }: StudyCardProps) => {
             {data.schedule?.map((item, index) => (
               <div
                 key={index}
-                className="flex items-center gap-4 p-3 bg-secondary/50 rounded-lg"
+                className="p-3 bg-secondary/50 rounded-lg"
               >
-                <div className="w-12 h-12 rounded-xl gradient-bg flex items-center justify-center flex-shrink-0">
-                  <span className="text-primary-foreground font-bold">D{item.day}</span>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl gradient-bg flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary-foreground font-bold">D{item.day}</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground">{item.focus}</p>
+                    <p className="text-sm text-muted-foreground">{item.hours} hours of focused study</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium text-foreground">{item.focus}</p>
-                  <p className="text-sm text-muted-foreground">{item.hours} hours of focused study</p>
-                </div>
+                {item.activities && item.activities.length > 0 && (
+                  <div className="mt-2 ml-16 flex flex-wrap gap-1">
+                    {item.activities.map((activity, actIdx) => (
+                      <span key={actIdx} className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
+                        {activity}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
