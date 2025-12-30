@@ -1,7 +1,5 @@
-// API service for communicating with the Flask backend
-// Replace BASE_URL with your Flask backend URL when deploying
-
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// API service for communicating with the RL-based study planner backend
+import { supabase } from '@/integrations/supabase/client';
 
 export interface StudyPlanRequest {
   subject: string;
@@ -15,75 +13,75 @@ export interface StudyPlanResponse {
   youtube_resources: Array<{
     title: string;
     url: string;
+    thumbnail?: string;
   }>;
   google_resources: Array<{
     title: string;
     url: string;
+    snippet?: string;
   }>;
   study_schedule: Array<{
     day: number;
     hours: number;
     focus: string;
+    activities?: string[];
   }>;
+  difficulty_info?: {
+    resourceTypes: string[];
+    estimatedTime: string;
+    learningOutcome: string;
+  };
+  q_learning_action?: number;
+  complexity_level?: string;
 }
 
 export interface FeedbackRequest {
   rating: number;
   comment?: string;
+  planData?: StudyPlanResponse & { complexity: number };
 }
 
 export const studyPlannerApi = {
-  // Create a study plan
+  // Create a study plan using RL-based edge function
   createStudyPlan: async (data: StudyPlanRequest): Promise<StudyPlanResponse> => {
-    // For demo purposes, return mock data
-    // Replace with actual API call when connecting to Flask backend
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
+    console.log('Creating study plan with RL:', data);
     
-    const mockResponse: StudyPlanResponse = {
-      study_hours: Math.ceil(data.complexity * 2.5),
-      days_needed: Math.ceil(data.complexity * 1.5),
-      youtube_resources: [
-        { title: `${data.topic} - Complete Tutorial`, url: 'https://youtube.com' },
-        { title: `${data.topic} for Beginners`, url: 'https://youtube.com' },
-        { title: `Advanced ${data.topic} Concepts`, url: 'https://youtube.com' },
-      ],
-      google_resources: [
-        { title: `${data.topic} Documentation`, url: 'https://google.com' },
-        { title: `${data.topic} Best Practices`, url: 'https://google.com' },
-        { title: `${data.topic} Cheat Sheet`, url: 'https://google.com' },
-      ],
-      study_schedule: Array.from({ length: Math.ceil(data.complexity * 1.5) }, (_, i) => ({
-        day: i + 1,
-        hours: Math.ceil(data.complexity * 2.5 / Math.ceil(data.complexity * 1.5)),
-        focus: i === 0 ? 'Fundamentals' : i === Math.ceil(data.complexity * 1.5) - 1 ? 'Practice & Review' : 'Deep Dive',
-      })),
-    };
+    const { data: response, error } = await supabase.functions.invoke('study-plan', {
+      body: {
+        action: 'create_plan',
+        subject: data.subject,
+        topic: data.topic,
+        complexity: data.complexity
+      }
+    });
     
-    return mockResponse;
+    if (error) {
+      console.error('Study plan API error:', error);
+      throw new Error('Failed to create study plan');
+    }
     
-    // Uncomment for actual API call:
-    // const response = await fetch(`${BASE_URL}/api/study-plan`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(data),
-    // });
-    // if (!response.ok) throw new Error('Failed to create study plan');
-    // return response.json();
+    console.log('Study plan response:', response);
+    return response as StudyPlanResponse;
   },
 
-  // Submit feedback
+  // Submit feedback to update Q-table (explicit RL feedback)
   submitFeedback: async (data: FeedbackRequest): Promise<{ success: boolean }> => {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    return { success: true };
+    console.log('Submitting feedback:', data);
     
-    // Uncomment for actual API call:
-    // const response = await fetch(`${BASE_URL}/api/feedback`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(data),
-    // });
-    // if (!response.ok) throw new Error('Failed to submit feedback');
-    // return response.json();
+    const { data: response, error } = await supabase.functions.invoke('study-plan', {
+      body: {
+        action: 'submit_feedback',
+        feedback: data.rating,
+        planData: data.planData
+      }
+    });
+    
+    if (error) {
+      console.error('Feedback API error:', error);
+      throw new Error('Failed to submit feedback');
+    }
+    
+    return { success: true };
   },
 };
 

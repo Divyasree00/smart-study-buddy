@@ -15,6 +15,16 @@ const Feedback = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { toast } = useToast();
 
+  // Get stored plan data for Q-learning feedback
+  const getPlanData = () => {
+    try {
+      const stored = sessionStorage.getItem('studyPlanData');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -29,13 +39,25 @@ const Feedback = () => {
 
     setIsLoading(true);
     try {
-      await studyPlannerApi.submitFeedback({ rating, comment });
+      const planData = getPlanData();
+      await studyPlannerApi.submitFeedback({ 
+        rating, 
+        comment,
+        planData // Send plan data for Q-table update
+      });
       setIsSubmitted(true);
+      
+      // Clear stored plan data after successful feedback
+      sessionStorage.removeItem('studyPlanData');
+      
       toast({
         title: 'Thank you! 🙏',
-        description: 'Your feedback has been submitted successfully.',
+        description: planData 
+          ? 'Your feedback has been used to improve our Q-learning model.' 
+          : 'Your feedback has been submitted successfully.',
       });
     } catch (error) {
+      console.error('Feedback error:', error);
       toast({
         title: 'Error',
         description: 'Failed to submit feedback. Please try again.',

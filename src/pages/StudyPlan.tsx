@@ -13,10 +13,20 @@ import { useToast } from '@/hooks/use-toast';
 const StudyPlan = () => {
   const [subject, setSubject] = useState('');
   const [topic, setTopic] = useState('');
-  const [complexity, setComplexity] = useState([5]);
+  const [complexity, setComplexity] = useState([2]); // 1=Beginner, 2=Intermediate, 3=Advanced
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<StudyPlanResponse | null>(null);
   const { toast } = useToast();
+
+  // Store plan data in sessionStorage for feedback page
+  const savePlanData = (planResult: StudyPlanResponse, complexityLevel: number) => {
+    sessionStorage.setItem('studyPlanData', JSON.stringify({
+      ...planResult,
+      complexity: complexityLevel,
+      subject,
+      topic
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,17 +42,22 @@ const StudyPlan = () => {
 
     setIsLoading(true);
     try {
+      // Map slider value to RL complexity (1-3)
+      const rlComplexity = complexity[0] <= 3 ? 1 : complexity[0] <= 6 ? 2 : 3;
+      
       const response = await studyPlannerApi.createStudyPlan({
         subject,
         topic,
-        complexity: complexity[0],
+        complexity: rlComplexity,
       });
       setResult(response);
+      savePlanData(response, rlComplexity);
       toast({
         title: 'Study Plan Created! 🎉',
-        description: 'Your personalized study plan is ready.',
+        description: `Q-Learning optimized: ${response.study_hours} hours over ${response.days_needed} days`,
       });
     } catch (error) {
+      console.error('Study plan error:', error);
       toast({
         title: 'Error',
         description: 'Failed to create study plan. Please try again.',
@@ -57,7 +72,8 @@ const StudyPlan = () => {
     setResult(null);
     setSubject('');
     setTopic('');
-    setComplexity([5]);
+    setComplexity([2]);
+    sessionStorage.removeItem('studyPlanData');
   };
 
   const handleDownload = () => {
@@ -74,10 +90,17 @@ OVERVIEW
 --------
 Total Study Hours: ${result.study_hours}
 Days Needed: ${result.days_needed}
-
+Difficulty Level: ${result.complexity_level || 'N/A'}
+${result.difficulty_info ? `
+RECOMMENDED APPROACH
+--------------------
+Resource Types: ${result.difficulty_info.resourceTypes.join(', ')}
+Session Duration: ${result.difficulty_info.estimatedTime}
+Learning Outcome: ${result.difficulty_info.learningOutcome}
+` : ''}
 SCHEDULE
 --------
-${result.study_schedule.map(s => `Day ${s.day}: ${s.hours} hours - ${s.focus}`).join('\n')}
+${result.study_schedule.map(s => `Day ${s.day}: ${s.hours} hours - ${s.focus}${s.activities ? '\n  Activities: ' + s.activities.join(', ') : ''}`).join('\n')}
 
 YOUTUBE RESOURCES
 -----------------
@@ -103,8 +126,8 @@ ${result.google_resources.map(r => `- ${r.title}: ${r.url}`).join('\n')}
   };
 
   const getComplexityLabel = (value: number) => {
-    if (value <= 3) return { label: 'Beginner', color: 'text-green-500' };
-    if (value <= 6) return { label: 'Intermediate', color: 'text-yellow-500' };
+    if (value === 1) return { label: 'Beginner', color: 'text-green-500' };
+    if (value === 2) return { label: 'Intermediate', color: 'text-yellow-500' };
     return { label: 'Advanced', color: 'text-red-500' };
   };
 
@@ -173,21 +196,21 @@ ${result.google_resources.map(r => `- ${r.title}: ${r.url}`).join('\n')}
                     <div className="flex items-center justify-between">
                       <Label className="text-foreground">Complexity Level</Label>
                       <span className={`text-sm font-medium ${complexityInfo.color}`}>
-                        {complexityInfo.label} ({complexity[0]}/10)
+                        {complexityInfo.label}
                       </span>
                     </div>
                     <Slider
                       value={complexity}
                       onValueChange={setComplexity}
                       min={1}
-                      max={10}
+                      max={3}
                       step={1}
                       className="py-2"
                     />
                     <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Easy</span>
-                      <span>Medium</span>
-                      <span>Hard</span>
+                      <span>Beginner</span>
+                      <span>Intermediate</span>
+                      <span>Advanced</span>
                     </div>
                   </div>
 
