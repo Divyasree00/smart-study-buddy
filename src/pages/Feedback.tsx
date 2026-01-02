@@ -40,11 +40,10 @@ const Feedback = () => {
     setIsLoading(true);
     try {
       const planData = getPlanData();
-      await studyPlannerApi.submitFeedback({ 
-        rating, 
-        comment,
-        planData // Send plan data for Q-table update
-      });
+      // Submit feedback - for client-side RL, this is a no-op but we keep the form for UX
+      if (planData && planData.rl_action !== undefined) {
+        studyPlannerApi.submitFeedback(planData.complexity, planData.rl_action, rating >= 3);
+      }
       setIsSubmitted(true);
       
       // Clear stored plan data after successful feedback
