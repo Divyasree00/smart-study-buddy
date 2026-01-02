@@ -6,7 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { studyPlannerApi, StudyPlanResponse } from '@/services/api';
 import StudyCard from '@/components/StudyCard';
-import { Loader2, BookOpen, Sparkles, Download, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Loader2, BookOpen, Sparkles, Download, ArrowLeft, RefreshCw, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,17 +16,9 @@ const StudyPlan = () => {
   const [complexity, setComplexity] = useState([2]); // 1=Beginner, 2=Intermediate, 3=Advanced
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<StudyPlanResponse | null>(null);
+  const [isApproved, setIsApproved] = useState(false);
+  const [currentAction, setCurrentAction] = useState<number | null>(null);
   const { toast } = useToast();
-
-  // Store plan data in sessionStorage for feedback page
-  const savePlanData = (planResult: StudyPlanResponse, complexityLevel: number) => {
-    sessionStorage.setItem('studyPlanData', JSON.stringify({
-      ...planResult,
-      complexity: complexityLevel,
-      subject,
-      topic
-    }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,20 +33,21 @@ const StudyPlan = () => {
     }
 
     setIsLoading(true);
+    setIsApproved(false);
+    
     try {
-      // Map slider value to RL complexity (1-3)
-      const rlComplexity = complexity[0] <= 3 ? 1 : complexity[0] <= 6 ? 2 : 3;
-      
       const response = await studyPlannerApi.createStudyPlan({
         subject,
         topic,
-        complexity: rlComplexity,
+        complexity: complexity[0],
       });
+      
       setResult(response);
-      savePlanData(response, rlComplexity);
+      setCurrentAction(response.rl_action);
+      
       toast({
         title: 'Study Plan Created! 🎉',
-        description: `Q-Learning optimized: ${response.study_hours} hours over ${response.days_needed} days`,
+        description: `${response.study_hours} hours over ${response.days_needed} days`,
       });
     } catch (error) {
       console.error('Study plan error:', error);
@@ -68,29 +61,78 @@ const StudyPlan = () => {
     }
   };
 
+  const handleGenerateNew = async () => {
+    if (!result || currentAction === null) return;
+    
+    // Submit negative feedback for rejection
+    studyPlannerApi.submitFeedback(complexity[0], currentAction, false);
+    
+    setIsLoading(true);
+    setIsApproved(false);
+    
+    try {
+      const response = await studyPlannerApi.createStudyPlan({
+        subject,
+        topic,
+        complexity: complexity[0],
+      });
+      
+      setResult(response);
+      setCurrentAction(response.rl_action);
+      
+      toast({
+        title: 'New Plan Generated! 🔄',
+        description: 'RL model updated based on your feedback.',
+      });
+    } catch (error) {
+      console.error('Study plan error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate new plan.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleApprove = () => {
+    if (!result || currentAction === null) return;
+    
+    // Submit positive feedback for approval
+    studyPlannerApi.submitFeedback(complexity[0], currentAction, true);
+    setIsApproved(true);
+    
+    toast({
+      title: 'Plan Approved! ✅',
+      description: 'You can now download your study plan.',
+    });
+  };
+
   const handleReset = () => {
     setResult(null);
     setSubject('');
     setTopic('');
     setComplexity([2]);
-    sessionStorage.removeItem('studyPlanData');
+    setIsApproved(false);
+    setCurrentAction(null);
   };
 
   const handleDownload = () => {
-    if (!result) return;
+    if (!result || !isApproved) return;
 
     const planText = `
 STUDY PLAN
 ==========
 Subject: ${subject}
 Topic: ${topic}
-Complexity: ${complexity[0]}/10
+Complexity: ${result.complexity_level}
+Intensity: ${result.difficulty_info?.intensity || 'Balanced'}
 
 OVERVIEW
 --------
 Total Study Hours: ${result.study_hours}
 Days Needed: ${result.days_needed}
-Difficulty Level: ${result.complexity_level || 'N/A'}
 ${result.difficulty_info ? `
 RECOMMENDED APPROACH
 --------------------
@@ -246,19 +288,13 @@ ${result.google_resources.map(r => `- ${r.title}: ${r.url}`).join('\n')}
                   Your Study Plan for <span className="gradient-text">{topic}</span>
                 </h1>
                 <p className="text-muted-foreground">
-                  Subject: {subject} • Complexity: {complexityInfo.label}
+                  Subject: {subject} • Complexity: {complexityInfo.label} • Intensity: {result.difficulty_info?.intensity || 'Balanced'}
                 </p>
               </div>
-              <div className="flex gap-3">
-                <Button variant="glass" onClick={handleReset} className="gap-2">
-                  <RefreshCw className="w-4 h-4" />
-                  New Plan
-                </Button>
-                <Button variant="hero" onClick={handleDownload} className="gap-2">
-                  <Download className="w-4 h-4" />
-                  Download
-                </Button>
-              </div>
+              <Button variant="glass" onClick={handleReset} className="gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Start Over
+              </Button>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -281,6 +317,56 @@ ${result.google_resources.map(r => `- ${r.title}: ${r.url}`).join('\n')}
                 type="google"
                 data={{ resources: result.google_resources }}
               />
+            </div>
+
+            {/* Approval Section */}
+            <div className="mt-8 p-6 bg-secondary/30 rounded-xl border border-border/50">
+              <p className="text-center text-foreground font-medium mb-4">
+                Are you satisfied with this study plan?
+              </p>
+              
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={handleGenerateNew} 
+                  disabled={isLoading}
+                  className="gap-2"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  Generate New Plan
+                </Button>
+                
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant={isApproved ? "default" : "secondary"}
+                    onClick={handleApprove}
+                    disabled={isApproved}
+                    className="gap-2"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    {isApproved ? 'Approved' : 'Approve Plan'}
+                  </Button>
+                  
+                  <Button
+                    variant="hero"
+                    size="icon"
+                    onClick={handleDownload}
+                    disabled={!isApproved}
+                    className={`transition-opacity ${!isApproved ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title={isApproved ? 'Download plan' : 'Approve plan first to download'}
+                  >
+                    <Download className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              <p className="text-center text-xs text-muted-foreground mt-4">
+                You can regenerate plans as many times as you want before approving. Approve the plan to unlock download.
+              </p>
             </div>
           </div>
         )}
