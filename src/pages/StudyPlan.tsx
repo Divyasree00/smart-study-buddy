@@ -82,7 +82,7 @@ const StudyPlan = () => {
       
       toast({
         title: 'New Plan Generated! 🔄',
-        description: 'RL model updated based on your feedback.',
+        description: ' model updatesbased on your feedback.',
       });
     } catch (error) {
       console.error('Study plan error:', error);
