@@ -65,12 +65,12 @@ const Home = () => {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: '0.2s' }}>
               <Link to="/study-plan">
-                <Button variant="hero" size="xl" className="gap-2 group">
+                <Button variant="hero" size="lg"className="gap-2 group">
                   Create Study Plan
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Button variant="glass" size="xl" className="gap-2">
+              <Button variant="glass" size="lg" className="gap-2">
                 <BookOpen className="w-5 h-5" />
                 Learn More
               </Button>
@@ -193,7 +193,7 @@ const Home = () => {
 
           <div className="text-center mt-12">
             <Link to="/study-plan">
-              <Button variant="hero" size="xl" className="gap-2 group">
+              <Button variant="hero" size="lg" className="gap-2 group">
                 Get Started Now
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
