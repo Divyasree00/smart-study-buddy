@@ -2,6 +2,3 @@ project_id = "fhhbsdilsegdwymzodwl"
 
 [functions.chat]
 verify_jwt = false
-
-[functions.study-plan]
-verify_jwt = false
