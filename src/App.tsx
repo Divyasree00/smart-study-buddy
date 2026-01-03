@@ -25,9 +25,7 @@ const App = () => (
           <Route path="/feedback" element={<Feedback />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-       {/*
-<Chatbot />
-*/}
+        <Chatbot />
       </HashRouter>
     </TooltipProvider>
   </QueryClientProvider>
