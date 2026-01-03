@@ -58,8 +58,8 @@ const Home = () => {
 
             {/* Subheading */}
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-              Transform the way you learn with personalized study plans, curated resources, 
-              and an AI assistant that's always ready to help clear your doubts.
+              Transform the way you learn with personalized study plans and curated resources
+               that's always ready to help you.
             </p>
 
             {/* CTA Buttons */}
