@@ -1,19 +1,24 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { BookOpen, Menu, X, Home, Calendar, MessageSquare } from 'lucide-react';
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { BookOpen, Menu, X, Home, Calendar, MessageSquare } from "lucide-react";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
+  const currentPath =
+    location.pathname === "/" && location.hash
+      ? location.hash.replace("#", "")
+      : location.pathname;
+
   const navLinks = [
-    { path: '/', label: 'Home', icon: Home },
-    { path: '/study-plan', label: 'Study Plan', icon: Calendar },
-    { path: '/feedback', label: 'Feedback', icon: MessageSquare },
+    { path: "/", label: "Home", icon: Home },
+    { path: "/study-plan", label: "Study Plan", icon: Calendar },
+    { path: "/feedback", label: "Feedback", icon: MessageSquare },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => currentPath === path;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border/50">
@@ -36,8 +41,10 @@ const Navbar = () => {
               return (
                 <Link key={link.path} to={link.path}>
                   <Button
-                    variant={isActive(link.path) ? 'secondary' : 'ghost'}
-                    className={`gap-2 ${isActive(link.path) ? 'bg-primary/10 text-primary' : ''}`}
+                    variant={isActive(link.path) ? "secondary" : "ghost"}
+                    className={`gap-2 ${
+                      isActive(link.path) ? "bg-primary/10 text-primary" : ""
+                    }`}
                   >
                     <Icon className="w-4 h-4" />
                     {link.label}
@@ -50,9 +57,7 @@ const Navbar = () => {
           {/* CTA Button */}
           <div className="hidden md:block">
             <Link to="/study-plan">
-              <Button variant="hero" size="default">
-                Get Started
-              </Button>
+              <Button variant="hero">Get Started</Button>
             </Link>
           </div>
 
@@ -82,9 +87,11 @@ const Navbar = () => {
                     onClick={() => setIsOpen(false)}
                   >
                     <Button
-                      variant={isActive(link.path) ? 'secondary' : 'ghost'}
+                      variant={isActive(link.path) ? "secondary" : "ghost"}
                       className={`w-full justify-start gap-3 ${
-                        isActive(link.path) ? 'bg-primary/10 text-primary' : ''
+                        isActive(link.path)
+                          ? "bg-primary/10 text-primary"
+                          : ""
                       }`}
                     >
                       <Icon className="w-5 h-5" />
