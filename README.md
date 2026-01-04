@@ -2,7 +2,7 @@
 
 A smart study planning web application that creates personalized learning paths using reinforcement learning algorithms.
 
-🔗 **Live Demo:** [https://your-username.github.io/ai-study-planner](https://your-username.github.io/ai-study-planner)
+🔗 **Live Demo:** https://divyasree00.github.io/smart-study-buddy/
 
 ---
 
