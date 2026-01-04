@@ -2,7 +2,7 @@
 
 A smart study planning web application that creates personalized learning paths using reinforcement learning algorithms.
 
-🔗 **Live Demo:** https://divyasree00.github.io/smart-study-buddy/
+🔗 **Live Demo:** [https://divyasree00.github.io/smart-study-buddy/](https://divyasree00.github.io/smart-study-buddy/)
 
 ---
 
@@ -50,26 +50,6 @@ The app uses a Q-learning algorithm to improve recommendations:
 
 ---
 
-## 📁 Project Structure
-
-```
-src/
-├── components/          # Reusable UI components
-│   ├── Chatbot.tsx     # AI chat interface
-│   ├── Navbar.tsx      # Navigation bar
-│   └── StudyCard.tsx   # Study plan display cards
-├── pages/
-│   ├── Home.tsx        # Landing page
-│   ├── StudyPlan.tsx   # Main study planner page
-│   └── Feedback.tsx    # User feedback page
-├── hooks/
-│   └── useRLEngine.ts  # Reinforcement learning logic
-├── services/
-│   └── api.ts          # Study plan generation logic
-└── index.css           # Global styles & design tokens
-```
-
----
 
 ## 🚀 Getting Started
 
@@ -133,7 +113,6 @@ Based on the selected action, the system generates:
 
 The app uses a consistent design system with:
 - HSL-based color tokens for theming
-- Dark/light mode support via CSS variables
 - Responsive layouts for mobile and desktop
 - Accessible UI components from shadcn/ui
 
